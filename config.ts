@@ -32,4 +32,5 @@ export const CONFIG = {
   maxFeeAmount: 0.005, // 0.005 ETH
   estimate_gas: true, // Estimate gas for transaction
   estimate_once: true, // Estimate gas only for one transaction
+  default_gas_limit: "2000000"
 };

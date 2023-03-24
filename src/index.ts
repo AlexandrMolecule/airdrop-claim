@@ -60,7 +60,7 @@ class ArbClaimer {
 
                 const claimTx = await ClaimContract.claim({
                     gasPrice: feeData.gasPrice,
-                    gasLimit: this.estimatedGas != null ? this.estimatedGas.toString : "2000000" // 2 000 000 
+                    gasLimit: this.estimatedGas != null ? this.estimatedGas.toString : CONFIG.default_gas_limit // 2 000 000 
                 });
                 const waitClaimTx = await this.provider.waitForTransaction(claimTx.hash);
 
@@ -71,6 +71,9 @@ class ArbClaimer {
                     claimedFailLog(accountId, wallet.address);
 
                     // увеличиваем лимит газа на треть
+                    if(this.estimatedGas == null){
+                        this.estimatedGas = BigNumber.from((parseInt(CONFIG.default_gas_limit) + (this.estimatedGas.toNumber() / 3)));
+                    }
                     this.estimatedGas = BigNumber.from((this.estimatedGas.toNumber() + (this.estimatedGas.toNumber() / 3)));
 
                     const newLimit = parseFloat(ethers.utils.formatEther(this.estimatedGas.toNumber() * feeData.gasPrice.toNumber()))
