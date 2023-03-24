@@ -1,9 +1,9 @@
 import chalk from "chalk";
-
-const scan = `https://arbiscan.io/`
+import { CONFIG } from "../config.js";
+const scan = CONFIG.scan
 
 export const claimedOkLog = (accountId, amount, hash) => console.log(`${chalk.bgGreenBright.whiteBright(`  [${accountId}] Claimed ${amount} $ARB. ${scan}/tx/${hash}`)}`);
-export const claimedFailLog = (accountId, address) => console.log(`${chalk.bgRedBright.whiteBright(`  [${accountId}] Claim wasn't successful for ${address}`)}`);
+export const claimedFailLog = (accountId, address) => console.log(`${chalk.bgRedBright.whiteBright(`  [${accountId}] Claim wasn't successful for ${address}, Try again in 0.5s`)}`);
 export const transferOkLog = (accountId, amount, hash) => console.log(`${chalk.bgGreenBright.whiteBright(`  [${accountId}] Transferred ${amount} $ARB. ${scan}/tx/${hash}`)}`);
 export const transferFailLog = (accountId, address) => console.log(`${chalk.bgRedBright.whiteBright(`  [${accountId}] Transfer wasn't successful for ${address}`)}`);
 export const claimNotStartedLog = (blockNum) => console.log(`${chalk.bgYellow.whiteBright(`  [${blockNum}] Claim not started yet. Waiting for the next block.`)}`);

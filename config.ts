@@ -21,8 +21,15 @@ export const DEXES = {
 };
 
 export const CONFIG = {
+  scan: `https://arbiscan.io`,
+
+  tokenAddress: "0x912CE59144191C1204E64559FE8253a0e49E6548",
+  distributorAddress: "0x67a24CE4321aB3aF51c2D0a4801c3E111D88C9d9",
+
   rpc_arb_http: RPC_ARBITRUM_HTTP,
   rpc_eth_wss: RPC_ETHEREUM_WSS,
-  arbTokenAddress: "0x912CE59144191C1204E64559FE8253a0e49E6548",
-  distributorAddress: "0x67a24CE4321aB3aF51c2D0a4801c3E111D88C9d9"
+
+  maxFeeAmount: 0.005, // 0.005 ETH
+  estimate_gas: true, // Estimate gas for transaction
+  estimate_once: true, // Estimate gas only for one transaction
 };

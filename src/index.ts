@@ -1,6 +1,6 @@
 
-import { ethers } from "ethers";
-import { CONFIG, ACCOUNTS } from "../config.js";
+import { BigNumber, ethers } from "ethers";
+import { ACCOUNTS, CONFIG } from "../config.js";
 import {
     claimedFailLog,
     claimedOkLog,
@@ -13,8 +13,8 @@ import {
 } from "./logs.js";
 
 /* ABI */
-import erc20Abi from "../abi/erc20.json" assert { type: "json" };
 import distributorAbi from "../abi/distributor.json" assert { type: "json" };
+import erc20Abi from "../abi/erc20.json" assert { type: "json" };
 
 class ArbClaimer {
     static EXPECTED_PONG_BACK = 10000;
@@ -29,6 +29,7 @@ class ArbClaimer {
     transfersOk = 0;
     totalAccountsDone = 0;
     claimStartBlock = 0;
+    estimatedGas: BigNumber | null = null;
 
     constructor() {
         this.provider = new ethers.providers.JsonRpcProvider(
@@ -45,15 +46,21 @@ class ArbClaimer {
             const accountId = account.privateKey.slice(0, 8);
             const wallet = new ethers.Wallet(account.privateKey, this.provider);
             const ClaimContract = new ethers.Contract(CONFIG.distributorAddress, distributorAbi, wallet);
-            const ArbTokenContract = new ethers.Contract(CONFIG.arbTokenAddress, erc20Abi, wallet);
+            const ArbTokenContract = new ethers.Contract(CONFIG.tokenAddress, erc20Abi, wallet);
             const claimableTokens = await ClaimContract.claimableTokens(wallet.address);
             const claimableTokensFormattedNum = Number(ethers.utils.formatEther(claimableTokens));
             const feeData = await this.provider.getFeeData();
 
             if (claimableTokensFormattedNum > 0) {
+
+                // Расчет транзы происходит, если флаг estimate_once == true И если это первый расчет ИЛИ флаг estimate_once == false либо 
+                if (CONFIG.estimate_gas && ((CONFIG.estimate_once && this.estimatedGas == null) || !CONFIG.estimate_once)) {
+                    this.estimatedGas = await ClaimContract.estimateGas.claim();
+                }
+
                 const claimTx = await ClaimContract.claim({
                     gasPrice: feeData.gasPrice,
-                    gasLimit: "2000000" // 2 000 000 
+                    gasLimit: this.estimatedGas != null ? this.estimatedGas.toString : "2000000" // 2 000 000 
                 });
                 const waitClaimTx = await this.provider.waitForTransaction(claimTx.hash);
 
@@ -62,6 +69,16 @@ class ArbClaimer {
                     this.claimsOk++;
                 } else {
                     claimedFailLog(accountId, wallet.address);
+
+                    // увеличиваем лимит газа на треть
+                    this.estimatedGas = BigNumber.from((this.estimatedGas.toNumber() + (this.estimatedGas.toNumber() / 3)));
+
+                    const newLimit = parseFloat(ethers.utils.formatEther(this.estimatedGas.toNumber() * feeData.gasPrice.toNumber()))
+                    if (newLimit <= CONFIG.maxFeeAmount) {
+                        this.claimAccount(account)
+                    } else {
+                        setTimeout(()=> this.claimAccount(account), 500)
+                    }
                 }
 
                 // Transfer tokens if addressToSendTokens is set
